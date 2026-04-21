@@ -1,0 +1,10 @@
+node_modules/
+dist/
+coverage/
+*.ehpk
+*.log
+glasses/sim-*.png
+.env
+.env.local
+.DS_Store
+npm-debug.log*
