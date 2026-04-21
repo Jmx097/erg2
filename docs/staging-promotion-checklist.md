@@ -51,6 +51,13 @@ Install and build on the staging host:
 ```bash
 REPO_DIR=/opt/openclaw/erg2 APP_USER=openclaw ./ops/scripts/bootstrap-vps.sh
 REPO_DIR=/opt/openclaw/erg2 APP_USER=openclaw ./ops/scripts/install-vps-assets.sh
+RELAY_BASE_URL=https://<staging-host> DATABASE_URL=<staging-database-url> OPENCLAW_GATEWAY_TOKEN=<openclaw-token> npm run staging:prepare-env
+```
+
+Before restarting services, run:
+
+```bash
+npm run staging:audit
 ```
 
 Pass signal:
@@ -58,11 +65,14 @@ Pass signal:
 - packages install successfully
 - repo build succeeds on the host
 - nginx, Postgres, and system packages are present
+- bridge env exists with non-placeholder secrets and relay hostname
+- staging audit exits `0`
 
 Fail signal:
 
 - bootstrap script exits non-zero
 - the bridge cannot build on the target host
+- staging audit reports missing files, placeholder values, or invalid TLS paths
 
 ## 3. Service and Edge Validation
 
@@ -107,6 +117,12 @@ The same ordered host-side checks are also available through:
 RELAY_BASE_URL=https://<staging-host> ADMIN_API_TOKEN=<admin-token> npm run staging:validate
 ```
 
+Run the contract smoke for the auth and relay path:
+
+```bash
+RELAY_BASE_URL=https://<staging-host> ADMIN_API_TOKEN=<admin-token> npm run staging:contract
+```
+
 Create a pairing session directly if needed:
 
 ```bash
@@ -128,11 +144,13 @@ Validate this sequence end to end using the mobile app or an equivalent client:
 
 Pass signal:
 
+- `npm run staging:contract` completes with every step marked `passed`
 - every step above completes in order without manual DB edits or token hacks
 - revoke closes the active session and forces the repair path
 
 Fail signal:
 
+- `npm run staging:contract` exits non-zero or reports a failed step
 - any auth step requires retrying with mutated server state
 - websocket connect fails after a valid ticket is issued
 - prompt flow never reaches `reply.final`
@@ -207,3 +225,9 @@ Do not promote until all of these are true:
 - Postgres restore steps were rehearsed
 - access-token key rotation was rehearsed
 - any remaining gap is limited to G2-specific BLE UUID or protocol validation and is documented explicitly
+
+When logging issues during staging, classify each failure into exactly one bucket:
+
+- `deployment/ops gap`: host provisioning, env, TLS, nginx, systemd, firewall, or backup/recovery setup
+- `bridge contract bug`: an endpoint, token lifecycle, websocket flow, or readiness behavior differs from the documented contract
+- `external dependency gap`: missing Docker locally, unavailable OpenClaw runtime, missing staging credentials, or unresolved hardware/runtime dependencies
