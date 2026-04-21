@@ -12,11 +12,30 @@
     },
     "android": {
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.BLUETOOTH_SCAN",
+        "android.permission.BLUETOOTH_CONNECT",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
     },
+    "plugins": [
+      [
+        "react-native-ble-plx",
+        {
+          "isBackgroundEnabled": false,
+          "modes": [
+            "central"
+          ],
+          "bluetoothAlwaysPermission": "Allow $(PRODUCT_NAME) to connect to nearby Even G2 glasses."
+        }
+      ]
+    ],
     "extra": {
       "defaultRelayBaseUrl": "https://api.example.com",
-      "defaultDeviceDisplayName": "OpenClaw Mobile"
+      "defaultDeviceDisplayName": "OpenClaw Mobile",
+      "bleDeviceNamePrefix": "Even",
+      "bleScanTimeoutMs": 10000
     }
   }
 }

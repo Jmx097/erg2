@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import NetInfo from "@react-native-community/netinfo";
 import type { RelayServerMessage } from "@openclaw/protocol";
+import type { BleConnectionState, BleDeviceMessage } from "../ble";
 import type { MobileCompanionSnapshot } from "../mobile-companion";
 import { MobileCompanionController } from "../mobile-companion";
 import { MobileAuthClient } from "../auth-client";
 import { loadMobileAppConfig } from "../config";
-import { NoopBleBridge } from "../ble";
 import { ExpoSecureStorageAdapter } from "../adapters/expo-secure-storage";
+import { createReactNativeBleBridge } from "../adapters/react-native-ble-bridge";
 import { createNativeWebSocketFactory } from "../adapters/native-websocket";
 import { DEVICE_REGISTRATION_STORAGE_KEY, DeviceRegistrationStore } from "../secure-storage";
 import {
@@ -30,6 +31,9 @@ interface UiState {
   notice?: string;
   repairMessage?: string;
   promptDraft: string;
+  glassesState: string;
+  glassesDeviceName?: string;
+  glassesReason?: string;
   form: PairingFormInput;
   formErrors: PairingFormErrors;
 }
@@ -38,13 +42,22 @@ const DEFAULT_PROMPT = "Reply with one sentence confirming the mobile relay conn
 
 export function useMobileCompanionApp() {
   const config = useMemo(() => loadMobileAppConfig(), []);
+  const bleBridgeRef = useRef(
+    createReactNativeBleBridge({
+      deviceNamePrefix: config.bleDeviceNamePrefix,
+      serviceUuid: config.bleServiceUuid,
+      rxCharacteristicUuid: config.bleRxCharacteristicUuid,
+      txCharacteristicUuid: config.bleTxCharacteristicUuid,
+      scanTimeoutMs: config.bleScanTimeoutMs
+    })
+  );
   const relaySessionRef = useRef(new RelayWebSocketSession({ websocketFactory: createNativeWebSocketFactory() }));
   const controllerRef = useRef(
     new MobileCompanionController(
       new DeviceRegistrationStore(new ExpoSecureStorageAdapter(), DEVICE_REGISTRATION_STORAGE_KEY),
       new MobileAuthClient(),
       relaySessionRef.current,
-      new NoopBleBridge()
+      bleBridgeRef.current
     )
   );
   const promptCounterRef = useRef(0);
@@ -55,6 +68,7 @@ export function useMobileCompanionApp() {
     busy: true,
     statusDetail: "Checking for a stored device session...",
     connectionState: "idle",
+    glassesState: "disconnected",
     lastReply: "",
     promptDraft: DEFAULT_PROMPT,
     form: {
@@ -149,6 +163,34 @@ export function useMobileCompanionApp() {
             : "connecting"
       }));
     });
+  }, []);
+
+  useEffect(() => {
+    const unsubscribeState = bleBridgeRef.current.onStateChange((state: BleConnectionState) => {
+      setUiState((current) => ({
+        ...current,
+        glassesState: state.connected ? "connected" : "disconnected",
+        glassesDeviceName: state.displayName,
+        glassesReason: state.reason,
+        notice:
+          state.connected && state.displayName
+            ? `Glasses connected: ${state.displayName}.`
+            : state.reason
+              ? `Glasses unavailable: ${state.reason}`
+              : current.notice
+      }));
+    });
+    const unsubscribeMessages = bleBridgeRef.current.onMessage((message: BleDeviceMessage) => {
+      setUiState((current) => ({
+        ...current,
+        notice: summarizeBleMessage(message)
+      }));
+    });
+
+    return () => {
+      unsubscribeState();
+      unsubscribeMessages();
+    };
   }, []);
 
   useEffect(() => {
@@ -458,4 +500,12 @@ export function useMobileCompanionApp() {
 
 function createPromptId(counter: number): string {
   return `prm_mobile_${Date.now().toString(36)}_${counter.toString(36)}`;
+}
+
+function summarizeBleMessage(message: BleDeviceMessage): string {
+  if (message.type === "raw") {
+    return `Glasses message: ${message.payload.slice(0, 80)}`;
+  }
+
+  return `Glasses event: ${message.type}`;
 }

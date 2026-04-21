@@ -1,7 +1,7 @@
 import { createServer, type Server as HttpServer } from "node:http";
 import { pathToFileURL } from "node:url";
 import { getRequestListener } from "@hono/node-server";
-import type { ClientType } from "@openclaw/protocol";
+import type { ClientType, HardwareBridgeEventBatchRequest } from "@openclaw/protocol";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import type { Context } from "hono";
@@ -9,6 +9,7 @@ import { parseBearerToken, requireBearerToken } from "./auth.js";
 import type { BridgeConfig } from "./config.js";
 import { loadConfig } from "./config.js";
 import { ApiError, isApiError } from "./errors.js";
+import { HardwareBridgeIngestService } from "./hardware-bridge-ingest.js";
 import { createId } from "./ids.js";
 import { logBridgeEvent } from "./logger.js";
 import {
@@ -111,6 +112,7 @@ export function createBridgeApp(config: BridgeConfig, runtime?: BridgeRuntime): 
   }
 
   const resolvedRuntime = runtime ?? createBridgeRuntime(config);
+  const hardwareBridgeIngest = new HardwareBridgeIngestService(config);
   const app = new Hono<BridgeContextVariables>();
 
   app.use(
@@ -405,6 +407,26 @@ export function createBridgeApp(config: BridgeConfig, runtime?: BridgeRuntime): 
       });
       resolvedRuntime.relay.revokeDevice(result.device_id, reason);
       return c.json(result, 200);
+    } catch (error) {
+      return handleError(c, error);
+    }
+  });
+
+  app.post("/v1/hardware-bridge/events", async (c) => {
+    try {
+      const token = requireAuthorizationBearer(c);
+      if (token !== config.hardwareBridgeToken) {
+        throw new ApiError("Hardware bridge authorization required.", 401, "hardware_bridge_unauthorized");
+      }
+
+      const body = (await readJsonBody(c.req.raw)) as HardwareBridgeEventBatchRequest | null;
+      if (!body || typeof body !== "object") {
+        throw new ApiError("Expected JSON body.", 400, "hardware_bridge_invalid_request");
+      }
+
+      const result = hardwareBridgeIngest.ingest(body, c.get("requestId"), clientIp(c));
+      const hasRejected = result.rejected_events.length > 0;
+      return c.json(result, hasRejected ? 207 : 202);
     } catch (error) {
       return handleError(c, error);
     }

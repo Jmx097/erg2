@@ -21,6 +21,7 @@ export function createTestConfig(overrides: Partial<BridgeConfig> = {}): BridgeC
     openclawBaseUrl: "http://127.0.0.1:18789",
     openclawGatewayToken: "gateway-token",
     g2BridgeToken: "bridge-token",
+    hardwareBridgeToken: "hardware-bridge-token",
     openclawModel: "openclaw/default",
     openclawRequestTimeoutMs: 1_000,
     openclawHealthCheck: true,
@@ -38,6 +39,8 @@ export function createTestConfig(overrides: Partial<BridgeConfig> = {}): BridgeC
     relayStaleMissCount: 2,
     cleanupIntervalMs: 60 * 1000,
     promptResultRetentionMs: 24 * 60 * 60 * 1000,
+    hardwareBridgeDedupTtlMs: 10 * 60 * 1000,
+    hardwareBridgeMaxBatchSize: 100,
     ...overrides
   };
 }

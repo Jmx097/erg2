@@ -394,6 +394,75 @@ describe("bridge app", () => {
     expect(refreshExpiryMs).toBeGreaterThan(6 * 24 * 60 * 60 * 1000);
     expect(registered.client_type).toBe("even_hub");
   });
+
+  it("accepts authenticated laptop-bridge event batches and deduplicates event delivery", async () => {
+    const app = createBridgeApp(config, createBridgeRuntime(config, mockOpenClaw()));
+    const payload = {
+      bridge_id: "laptop-bridge-dev",
+      sent_at: new Date().toISOString(),
+      events: [
+        {
+          kind: "device.connection",
+          event_id: "evt_bridge_1",
+          bridge_id: "laptop-bridge-dev",
+          device_id: "xreal-g2-001",
+          sequence: 1,
+          occurred_at: new Date().toISOString(),
+          state: "connected"
+        }
+      ]
+    };
+
+    const firstResponse = await app.request("/v1/hardware-bridge/events", {
+      method: "POST",
+      headers: {
+        authorization: "Bearer hardware-bridge-token",
+        "content-type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+    expect(firstResponse.status).toBe(202);
+    expect(await firstResponse.json()).toMatchObject({
+      accepted_event_ids: ["evt_bridge_1"],
+      duplicate_event_ids: []
+    });
+
+    const secondResponse = await app.request("/v1/hardware-bridge/events", {
+      method: "POST",
+      headers: {
+        authorization: "Bearer hardware-bridge-token",
+        "content-type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+    expect(secondResponse.status).toBe(202);
+    expect(await secondResponse.json()).toMatchObject({
+      accepted_event_ids: [],
+      duplicate_event_ids: ["evt_bridge_1"]
+    });
+  });
+
+  it("rejects unauthenticated laptop-bridge event batches", async () => {
+    const app = createBridgeApp(config, createBridgeRuntime(config, mockOpenClaw()));
+
+    const response = await app.request("/v1/hardware-bridge/events", {
+      method: "POST",
+      headers: {
+        authorization: "Bearer wrong-token",
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        bridge_id: "laptop-bridge-dev",
+        sent_at: new Date().toISOString(),
+        events: []
+      })
+    });
+
+    expect(response.status).toBe(401);
+    expect(await response.json()).toMatchObject({
+      code: "hardware_bridge_unauthorized"
+    });
+  });
 });
 
 async function createPairingSession(app: ReturnType<typeof createBridgeApp>) {

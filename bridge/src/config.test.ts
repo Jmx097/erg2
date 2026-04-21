@@ -34,6 +34,7 @@ describe("resolveRuntimeEnv", () => {
         "OPENCLAW_BASE_URL=http://10.10.0.5:18789",
         "OPENCLAW_GATEWAY_TOKEN=file-token",
         "G2_BRIDGE_TOKEN=file-bridge-token",
+        "HARDWARE_BRIDGE_TOKEN=file-hardware-token",
         "OPENCLAW_MODEL=file-model"
       ].join("\n")
     );
@@ -56,6 +57,7 @@ describe("resolveRuntimeEnv", () => {
       openclawBaseUrl: "http://10.10.0.5:18789",
       openclawGatewayToken: "file-token",
       g2BridgeToken: "file-bridge-token",
+      hardwareBridgeToken: "file-hardware-token",
       openclawModel: "shell-model",
       openclawRequestTimeoutMs: 15000
     });
@@ -70,7 +72,8 @@ describe("resolveRuntimeEnv", () => {
       ACCESS_TOKEN_PUBLIC_KEY: TEST_PUBLIC_KEY,
       OPENCLAW_BASE_URL: "wss://glasses.plinkosolutions.com/",
       OPENCLAW_GATEWAY_TOKEN: "gateway-token",
-      G2_BRIDGE_TOKEN: "bridge-token"
+      G2_BRIDGE_TOKEN: "bridge-token",
+      HARDWARE_BRIDGE_TOKEN: "hardware-bridge-token"
     });
 
     expect(config.openclawBaseUrl).toBe("https://glasses.plinkosolutions.com");
@@ -85,7 +88,8 @@ describe("resolveRuntimeEnv", () => {
       ACCESS_TOKEN_PRIVATE_KEY: TEST_PRIVATE_KEY,
       ACCESS_TOKEN_PUBLIC_KEY: TEST_PUBLIC_KEY,
       OPENCLAW_BASE_URL: "http://127.0.0.1:18789",
-      OPENCLAW_GATEWAY_TOKEN: "gateway-token"
+      OPENCLAW_GATEWAY_TOKEN: "gateway-token",
+      HARDWARE_BRIDGE_TOKEN: "hardware-bridge-token"
     });
 
     expect(config.relayBaseUrl).toBe("http://127.0.0.1:8123");
@@ -99,7 +103,8 @@ describe("resolveRuntimeEnv", () => {
       ACCESS_TOKEN_PRIVATE_KEY: TEST_PRIVATE_KEY,
       ACCESS_TOKEN_PUBLIC_KEY: TEST_PUBLIC_KEY,
       OPENCLAW_BASE_URL: "http://127.0.0.1:18789",
-      OPENCLAW_GATEWAY_TOKEN: "gateway-token"
+      OPENCLAW_GATEWAY_TOKEN: "gateway-token",
+      HARDWARE_BRIDGE_TOKEN: "hardware-bridge-token"
     });
 
     expect(config.accessTokenPrivateKey).toContain("-----BEGIN PRIVATE KEY-----\n");

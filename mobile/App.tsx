@@ -85,10 +85,15 @@ export default function App() {
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Connected</Text>
               <MetricRow label="Connection" value={app.connectionState} />
+              <MetricRow
+                label="Glasses"
+                value={app.glassesDeviceName ? `${app.glassesState} (${app.glassesDeviceName})` : app.glassesState}
+              />
               <MetricRow label="Device" value={app.registration?.deviceDisplayName || "Unknown"} />
               <MetricRow label="Relay" value={app.registration?.relayBaseUrl || "Unknown"} />
               <MetricRow label="Conversation" value={app.registration?.defaultConversationId || "default"} />
               <MetricRow label="Last event" value={app.lastEventId || "Waiting"} />
+              {app.glassesReason ? <Text style={styles.hint}>{app.glassesReason}</Text> : null}
               {app.notice ? <Text style={styles.noticeText}>{app.notice}</Text> : null}
               {app.lastError ? <Text style={styles.errorText}>{app.lastError}</Text> : null}
               <LabeledField

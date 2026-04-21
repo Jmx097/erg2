@@ -20,6 +20,7 @@ export interface BridgeConfig {
   openclawBaseUrl: string;
   openclawGatewayToken: string;
   g2BridgeToken: string;
+  hardwareBridgeToken: string;
   openclawModel: string;
   openclawRequestTimeoutMs: number;
   openclawHealthCheck: boolean;
@@ -37,6 +38,8 @@ export interface BridgeConfig {
   relayStaleMissCount: number;
   cleanupIntervalMs: number;
   promptResultRetentionMs: number;
+  hardwareBridgeDedupTtlMs: number;
+  hardwareBridgeMaxBatchSize: number;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): BridgeConfig {
@@ -80,6 +83,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): BridgeConfig {
     openclawBaseUrl: normalizeBaseUrl(readRequired(runtimeEnv.OPENCLAW_BASE_URL, "OPENCLAW_BASE_URL")),
     openclawGatewayToken: readRequired(runtimeEnv.OPENCLAW_GATEWAY_TOKEN, "OPENCLAW_GATEWAY_TOKEN"),
     g2BridgeToken: runtimeEnv.G2_BRIDGE_TOKEN?.trim() || "",
+    hardwareBridgeToken: readRequired(runtimeEnv.HARDWARE_BRIDGE_TOKEN?.trim(), "HARDWARE_BRIDGE_TOKEN"),
     openclawModel: runtimeEnv.OPENCLAW_MODEL?.trim() || "openclaw/default",
     openclawRequestTimeoutMs: readInt(runtimeEnv.OPENCLAW_REQUEST_TIMEOUT_MS, 30_000),
     openclawHealthCheck: readBool(runtimeEnv.OPENCLAW_HEALTH_CHECK, true),
@@ -102,7 +106,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): BridgeConfig {
     relayPongTimeoutMs: readInt(runtimeEnv.RELAY_PONG_TIMEOUT_MS, 10 * 1000),
     relayStaleMissCount: readInt(runtimeEnv.RELAY_STALE_MISS_COUNT, 2),
     cleanupIntervalMs: readInt(runtimeEnv.CLEANUP_INTERVAL_MS, 60 * 1000),
-    promptResultRetentionMs: readInt(runtimeEnv.PROMPT_RESULT_RETENTION_MS, 24 * 60 * 60 * 1000)
+    promptResultRetentionMs: readInt(runtimeEnv.PROMPT_RESULT_RETENTION_MS, 24 * 60 * 60 * 1000),
+    hardwareBridgeDedupTtlMs: readInt(runtimeEnv.HARDWARE_BRIDGE_DEDUP_TTL_MS, 10 * 60 * 1000),
+    hardwareBridgeMaxBatchSize: readInt(runtimeEnv.HARDWARE_BRIDGE_MAX_BATCH_SIZE, 100)
   };
 }
 

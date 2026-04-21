@@ -6,6 +6,7 @@
   "workspaces": [
     "packages/protocol",
     "bridge",
+    "laptop-bridge",
     "glasses",
     "mobile"
   ],
@@ -14,7 +15,13 @@
     "test": "npm run test --workspaces",
     "typecheck": "npm run typecheck --workspaces",
     "test:integration": "npm run test:integration -w bridge",
+    "test:integration:local": "node ops/scripts/local-postgres-integration.mjs test",
+    "local:postgres:up": "node ops/scripts/local-postgres-integration.mjs up",
+    "local:postgres:down": "node ops/scripts/local-postgres-integration.mjs down",
+    "staging:validate": "bash ops/scripts/staging-validate.sh",
+    "staging:rehearsal": "bash ops/scripts/staging-rehearsal.sh",
     "dev:bridge": "npm run dev -w bridge",
+    "dev:laptop-bridge": "npm run dev -w laptop-bridge",
     "dev:glasses": "npm run dev -w glasses",
     "dev:mobile": "npm run dev -w mobile"
   },

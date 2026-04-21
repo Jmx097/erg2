@@ -6,6 +6,10 @@ export interface BleDeviceMessage {
 export interface BleConnectionState {
   connected: boolean;
   deviceId?: string;
+  peripheralId?: string;
+  displayName?: string;
+  adapterState?: string;
+  reason?: string;
 }
 
 export interface BleBridge {
@@ -17,11 +21,21 @@ export interface BleBridge {
 }
 
 export class NoopBleBridge implements BleBridge {
-  async connect(_deviceId: string): Promise<void> {
+  private readonly stateListeners = new Set<(state: BleConnectionState) => void>();
+
+  async connect(deviceId: string): Promise<void> {
+    this.emitState({
+      connected: false,
+      deviceId,
+      reason: "BLE is not configured for this build."
+    });
     return;
   }
 
   async disconnect(): Promise<void> {
+    this.emitState({
+      connected: false
+    });
     return;
   }
 
@@ -33,7 +47,17 @@ export class NoopBleBridge implements BleBridge {
     return () => undefined;
   }
 
-  onStateChange(_listener: (state: BleConnectionState) => void): () => void {
-    return () => undefined;
+  onStateChange(listener: (state: BleConnectionState) => void): () => void {
+    this.stateListeners.add(listener);
+    listener({ connected: false });
+    return () => {
+      this.stateListeners.delete(listener);
+    };
+  }
+
+  private emitState(state: BleConnectionState): void {
+    for (const listener of this.stateListeners) {
+      listener(state);
+    }
   }
 }

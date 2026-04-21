@@ -13,6 +13,10 @@ reaches OpenClaw services through one public VPS endpoint, and survives the mess
 parts of real usage: expired tokens, relay restarts, app backgrounding, dropped
 mobile networks, and reconnect storms.
 
+For laptop-local Bluetooth access, the repo also supports a split architecture
+where a nearby laptop runs a thin BLE bridge and forwards normalized device
+events to the VPS-hosted bridge over an authenticated HTTPS interface.
+
 The current `bridge/` and `glasses/` directories remain useful prototypes, but
 they are not the target production architecture. In particular, production does
 not rely on static bearer tokens pasted into a shipped client.
@@ -64,16 +68,30 @@ Out of scope:
 
 Today the repo contains:
 
-- `bridge/`: a thin Hono relay that accepts a static bearer token and maps
-  `installId` directly to `x-openclaw-session-key`
+- `bridge/`: a substantial Node/Hono relay with pairing, registration, refresh
+  rotation, websocket tickets, revocation, readiness, Postgres storage, and
+  structured logging
+- `mobile/`: a React Native mobile companion with secure storage, auth/session
+  lifecycle, websocket reconnect logic, repair UI, and a native BLE adapter
+  boundary using `react-native-ble-plx`
+- `laptop-bridge/`: a local Node/TypeScript BLE bridge with mock mode, health
+  endpoint, structured logs, normalized event forwarding, and an Xreal G2 BLE
+  adapter stub awaiting final UUID and protocol constants
 - `glasses/`: an Even Hub prototype app that stores a local `installId` and uses
   `VITE_G2_BRIDGE_TOKEN`
 
 Treat those pieces as:
 
-- useful prototype references for HUD rendering, simulator flow, and upstream
-  OpenClaw calls
-- non-canonical for auth, pairing, session identity, and production deployment
+- `bridge/` and `mobile/` are the canonical implementation surfaces for auth,
+  pairing, session identity, relay lifecycle, and production deployment
+- `glasses/` remains a useful prototype reference for HUD rendering, simulator
+  flow, and upstream OpenClaw calls
+- local repo verification is green, but staging validation and recovery
+  rehearsal still need to run against a real host
+- remaining mobile gap: G2-specific BLE UUID/config finalization and hardware
+  validation on a development build
+- remaining laptop-bridge gap: real laptop-side BLE transport beyond the current
+  adapter stub once Xreal G2 service and characteristic details are confirmed
 
 ## 5. Architecture Summary
 
@@ -1013,12 +1031,14 @@ Present three distinct actions:
 
 ### 15.2 Mobile app
 
-- scaffold a React Native app as the primary client
-- add BLE integration boundary for local glasses communication
-- add secure storage wrapper for device credentials
-- add auth client for pairing, register, refresh, and websocket ticket flows
-- add websocket lifecycle manager with heartbeat and reconnect logic
-- add repair UI for revoked, expired, and misconfigured states
+- React Native app scaffold is in place as the primary client
+- BLE integration boundary is implemented with a native adapter path
+- secure storage wrapper for device credentials is implemented
+- auth client for pairing, register, refresh, and websocket ticket flows is implemented
+- websocket lifecycle manager with heartbeat and reconnect logic is implemented
+- repair UI for revoked, expired, and misconfigured states is implemented
+- remaining work is device-specific BLE validation and final UUID wiring where
+  the production G2 protocol requires it
 
 ### 15.3 VPS and deployment
 
@@ -1053,6 +1073,8 @@ Present three distinct actions:
 - one default conversation per device
 - refresh-token rotation with family revocation
 - operator-only pairing session creation via CLI or protected admin page
+- mobile client built as a native development build rather than Expo Go when BLE
+  is required
 
 ### 16.2 Production-hardening next steps
 

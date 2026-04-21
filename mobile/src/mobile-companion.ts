@@ -140,6 +140,7 @@ export class MobileCompanionController {
     this.accessToken = "";
     this.accessTokenExpiresAt = undefined;
     this.latestTicket = undefined;
+    await this.bleBridge.disconnect();
     this.relaySession.disconnect(1000, "client_repair");
   }
 

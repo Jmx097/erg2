@@ -209,3 +209,113 @@ export interface RevokeDeviceResponse {
   revoked_at: string;
   disconnect_active_sessions: true;
 }
+
+export type HardwareBridgeConnectionState =
+  | "idle"
+  | "scanning"
+  | "pairing"
+  | "connecting"
+  | "connected"
+  | "reconnecting"
+  | "disconnected"
+  | "absent";
+
+export interface HardwareBridgeConnectionEvent {
+  kind: "device.connection";
+  event_id: string;
+  bridge_id: string;
+  device_id: string;
+  sequence: number;
+  occurred_at: string;
+  state: HardwareBridgeConnectionState;
+  reason?: string;
+  session_id?: string;
+  rssi?: number;
+}
+
+export interface HardwareBridgeTelemetryEvent {
+  kind: "telemetry.status";
+  event_id: string;
+  bridge_id: string;
+  device_id: string;
+  sequence: number;
+  occurred_at: string;
+  battery_percent?: number;
+  charging?: boolean;
+  signal_strength?: number;
+  status_text?: string;
+}
+
+export interface HardwareBridgeInputEvent {
+  kind: "input.control";
+  event_id: string;
+  bridge_id: string;
+  device_id: string;
+  sequence: number;
+  occurred_at: string;
+  control: "tap" | "button" | "gesture" | "voice" | "unknown";
+  action: "press" | "release" | "toggle" | "activate" | "unknown";
+  value?: string;
+}
+
+export interface HardwareBridgeErrorEvent {
+  kind: "debug.error";
+  event_id: string;
+  bridge_id: string;
+  device_id: string;
+  sequence: number;
+  occurred_at: string;
+  code: string;
+  message: string;
+  retryable: boolean;
+  details?: Record<string, unknown>;
+}
+
+export interface HardwareBridgeRawBleEvent {
+  kind: "debug.raw_ble";
+  event_id: string;
+  bridge_id: string;
+  device_id: string;
+  sequence: number;
+  occurred_at: string;
+  direction: "rx" | "tx";
+  characteristic_uuid?: string;
+  payload_hex: string;
+}
+
+export type HardwareBridgeEvent =
+  | HardwareBridgeConnectionEvent
+  | HardwareBridgeTelemetryEvent
+  | HardwareBridgeInputEvent
+  | HardwareBridgeErrorEvent
+  | HardwareBridgeRawBleEvent;
+
+export interface HardwareBridgeEventBatchRequest {
+  bridge_id: string;
+  sent_at: string;
+  events: HardwareBridgeEvent[];
+}
+
+export interface HardwareBridgeRejectedEvent {
+  event_id: string;
+  reason: string;
+}
+
+export interface HardwareBridgeEventBatchResponse {
+  request_id: string;
+  accepted_event_ids: string[];
+  duplicate_event_ids: string[];
+  rejected_events: HardwareBridgeRejectedEvent[];
+}
+
+export interface LaptopBridgeHealthResponse {
+  ok: boolean;
+  bridge_id: string;
+  mode: "mock" | "xreal_g2_ble_stub";
+  adapter_state: HardwareBridgeConnectionState;
+  glasses_connected: boolean;
+  upstream_queue_size: number;
+  last_delivery_at?: string;
+  last_delivery_error?: string;
+  raw_ble_logging: boolean;
+}

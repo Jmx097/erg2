@@ -2,7 +2,8 @@
 
 This repo now tracks the production-minded mobile companion path for Even
 Realities G2 on a single VPS. The React Native mobile companion is the primary
-production client, and the bridge is the production backend base.
+production client, the VPS bridge is the production backend base, and the
+laptop bridge is the thin local hardware adapter for BLE-only deployments.
 
 The canonical implementation brief for what this project is actually building now
 lives in [docs/openclaw-mobile-companion-architecture.md](docs/openclaw-mobile-companion-architecture.md).
@@ -11,10 +12,48 @@ lives in [docs/openclaw-mobile-companion-architecture.md](docs/openclaw-mobile-c
 
 - `bridge/` is the production backend base: pairing, auth, websocket relay,
   revocation, readiness, structured logs, Postgres migrations, and cleanup.
-- `mobile/` is the React Native-oriented production client scaffold with BLE,
-  secure storage, auth/session, websocket lifecycle, and repair modules.
+- `laptop-bridge/` is the local Node/TypeScript BLE hardware bridge for laptop
+  Bluetooth access and upstream forwarding to the VPS.
+- `mobile/` is the React Native-oriented production client with native BLE
+  adapter wiring, secure storage, auth/session, websocket lifecycle, and repair
+  modules.
 - `glasses/` is still an Even Hub prototype for simulator and diagnostic use.
   It is not the shipped production client.
+
+## Status
+
+Implemented in code:
+
+- bridge pairing, registration, refresh rotation, websocket tickets, relay,
+  revoke, readiness, and cleanup flows are implemented
+- mobile pairing, restore, refresh, reconnect, repair, and websocket flows are
+  implemented
+- mobile BLE now uses a real native adapter path via `react-native-ble-plx`
+  instead of the old no-op bridge
+- local Postgres-backed integration has a repo-owned Docker runner
+- laptop bridge mock mode, health endpoint, upstream transport, and VPS ingest
+  contract are implemented
+
+Validated locally:
+
+- repo-wide `typecheck`, `test`, and `build` are green
+- `npm run test:integration:local` now fails fast with a clear Docker Desktop
+  prerequisite message when the local Docker engine is unavailable
+
+Validated on staging:
+
+- not yet exercised from this workspace
+
+Still blocked by external runtime or hardware:
+
+- Docker Desktop or another reachable Postgres instance is still required to run
+  the actual Postgres-backed integration suite end to end
+- staging deployment, nginx validation, smoke checks, backup/restore rehearsal,
+  and key-rotation rehearsal still need to be executed against a real host
+- G2-specific BLE service and characteristic UUIDs still need to be supplied in
+  environment config for real device message I/O
+- real laptop-side BLE transport implementation beyond the current G2 adapter
+  stub still needs to be completed once hardware constants are known
 
 Important:
 
@@ -27,6 +66,7 @@ Important:
 ## Layout
 
 - `bridge/` - Node/TypeScript relay and auth service
+- `laptop-bridge/` - thin local BLE-to-VPS bridge for laptop hardware access
 - `mobile/` - production mobile companion scaffold
 - `glasses/` - prototype Even Hub simulator app
 - `ops/` - nginx, systemd, env templates, and operations scripts
@@ -52,6 +92,29 @@ Postgres-backed integration coverage is available when `TEST_DATABASE_URL` is se
 npm run test:integration
 ```
 
+For the standard local path on Windows or any machine using Docker Desktop:
+
+```bash
+npm run test:integration:local
+```
+
+This runner assumes:
+
+- Docker Desktop is running
+- local container name: `openclaw-test-postgres`
+- local port: `54329`
+- database: `openclaw_test`
+- credentials: `openclaw` / `openclaw`
+- `TEST_DATABASE_URL=postgres://openclaw:openclaw@127.0.0.1:54329/openclaw_test`
+
+You can also manage the container explicitly:
+
+```powershell
+npm run local:postgres:up
+npm run test:integration
+npm run local:postgres:down
+```
+
 ## Local Development
 
 Bridge:
@@ -75,9 +138,30 @@ cp mobile/.env.example mobile/.env
 npm run dev:mobile
 ```
 
-The current mobile app is an Expo shell with mocked BLE by default. It is meant
-to exercise real pairing, restore, refresh, websocket, and repair flows against
-the bridge while the native G2 BLE implementation is still pending.
+Laptop bridge workspace:
+
+```bash
+cp laptop-bridge/.env.example laptop-bridge/.env
+npm run dev:laptop-bridge
+```
+
+The current mobile app is an Expo-based native client. It is meant to exercise
+real pairing, restore, refresh, websocket, repair, and native BLE connectivity
+against the bridge.
+
+Bridge production assumptions are:
+
+- `BRIDGE_STORE_DRIVER=postgres`
+- Postgres is reachable and migrations can run
+- OpenClaw remains localhost-bound
+- `/v1/ready` only passes when both Postgres and OpenClaw are healthy
+- `HARDWARE_BRIDGE_TOKEN` is set separately for the laptop bridge ingest path
+
+For a real Ubuntu/Debian staging host, the repo now also includes:
+
+- `ops/scripts/install-vps-assets.sh` to install env, nginx, and systemd assets
+- `npm run staging:validate` for ordered host health/readiness/smoke checks
+- `npm run staging:rehearsal` for restart, outage, backup, restore, and key rotation rehearsal
 
 ## Deployment
 

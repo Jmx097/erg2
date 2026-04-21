@@ -1,5 +1,4 @@
 import { describe, expect, it, vi } from "vitest";
-import { NoopBleBridge } from "./ble";
 import { MobileCompanionController } from "./mobile-companion";
 import { InMemorySecureStorageAdapter, DeviceRegistrationStore } from "./secure-storage";
 import { RelayWebSocketSession } from "./websocket-session";
@@ -13,6 +12,13 @@ describe("MobileCompanionController", () => {
         throw new Error("not used");
       }
     });
+    const bleBridge = {
+      connect: vi.fn(),
+      disconnect: vi.fn(),
+      send: vi.fn(),
+      onMessage: vi.fn(() => () => undefined),
+      onStateChange: vi.fn(() => () => undefined)
+    };
     const controller = new MobileCompanionController(
       registrationStore,
       {
@@ -22,7 +28,7 @@ describe("MobileCompanionController", () => {
         issueWebSocketTicket: vi.fn()
       } as never,
       relaySession,
-      new NoopBleBridge()
+      bleBridge as never
     );
 
     await registrationStore.save({
@@ -39,5 +45,6 @@ describe("MobileCompanionController", () => {
 
     expect(await registrationStore.load()).toBeNull();
     expect(controller.getSnapshot().registration).toBeNull();
+    expect(bleBridge.disconnect).toHaveBeenCalledTimes(1);
   });
 });
