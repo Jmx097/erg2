@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OpenClaw G2</title>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <p class="eyebrow">Even Hub Companion</p>
+        <h1>OpenClaw for Even Realities G2</h1>
+        <p class="lede">
+          Pair once, keep a revocable device identity, and recover cleanly through foreground resumes, token refresh,
+          and relay restarts.
+        </p>
+      </section>
+
+      <section class="layout">
+        <section class="panel panel-pair">
+          <div class="panel-head">
+            <div>
+              <p class="panel-kicker">Pair Device</p>
+              <h2>Phone-Side Pairing</h2>
+            </div>
+            <span id="status-badge" class="status-badge">Booting</span>
+          </div>
+
+          <form id="pair-form" class="stack" novalidate>
+            <label class="field">
+              <span>Relay URL</span>
+              <input id="relay-url" name="relay-url" type="url" autocomplete="url" placeholder="https://relay.example.com" />
+              <small class="hint">Use your VPS relay URL. No bearer token goes here.</small>
+              <small id="relay-url-error" class="error" hidden></small>
+            </label>
+
+            <label class="field">
+              <span>Pairing Code</span>
+              <input
+                id="pairing-code"
+                name="pairing-code"
+                type="text"
+                inputmode="text"
+                autocapitalize="characters"
+                autocomplete="one-time-code"
+                placeholder="ABCD-2345"
+              />
+              <small class="hint">Short code only. If this looks like a URL or token, it is in the wrong field.</small>
+              <small id="pairing-code-error" class="error" hidden></small>
+            </label>
+
+            <label class="field">
+              <span>Device Display Name</span>
+              <input id="device-display-name" name="device-display-name" type="text" maxlength="48" placeholder="Jon's G2 companion" />
+              <small class="hint">Shown in device listings and revoke flows.</small>
+              <small id="device-display-name-error" class="error" hidden></small>
+            </label>
+
+            <div class="button-row">
+              <button id="pair-submit" class="button button-primary" type="submit">Pair Device</button>
+              <button id="repair-submit" class="button button-ghost" type="button">Re-pair Device</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="panel panel-session">
+          <div class="panel-head">
+            <div>
+              <p class="panel-kicker">Session Control</p>
+              <h2>Prompt + Recovery</h2>
+            </div>
+          </div>
+
+          <div class="meta-grid">
+            <div>
+              <span class="meta-label">Status</span>
+              <p id="status-detail" class="meta-value">Waiting for Even bridge...</p>
+            </div>
+            <div>
+              <span class="meta-label">Access Expiry</span>
+              <p id="access-expiry" class="meta-value">Not issued yet</p>
+            </div>
+          </div>
+
+          <label class="field field-prompt">
+            <span>Prompt Draft</span>
+            <textarea id="prompt-draft" rows="5" placeholder="Ask OpenClaw something concise enough for the HUD."></textarea>
+            <small class="hint">Single click on the glasses sends this draft. Double click cancels or returns to idle.</small>
+          </label>
+
+          <div class="button-row">
+            <button id="send-prompt" class="button button-primary" type="button">Send Prompt</button>
+            <button id="refresh-session" class="button button-ghost" type="button">Refresh Session</button>
+            <button id="reconnect-session" class="button button-ghost" type="button">Reconnect</button>
+          </div>
+
+          <div class="response-card">
+            <div class="response-head">
+              <span class="panel-kicker">Latest Reply</span>
+              <span id="pending-indicator" class="pending-indicator" hidden>Pending retry is preserved</span>
+            </div>
+            <pre id="reply-log" class="reply-log">No reply yet.</pre>
+          </div>
+
+          <p id="last-error" class="callout" hidden></p>
+        </section>
+      </section>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

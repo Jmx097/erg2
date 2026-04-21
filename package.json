@@ -1,0 +1,24 @@
+{
+  "name": "even-g2-openclaw-client",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/protocol",
+    "bridge",
+    "glasses"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces",
+    "typecheck": "npm run typecheck --workspaces",
+    "dev:bridge": "npm run dev -w bridge",
+    "dev:glasses": "npm run dev -w glasses"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

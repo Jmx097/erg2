@@ -1,0 +1,29 @@
+{
+  "name": "bridge",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "node dist/server.js",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "pair:create": "tsx src/pairing-cli.ts"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.19.6",
+    "@openclaw/protocol": "file:../packages/protocol",
+    "hono": "^4.12.14",
+    "jose": "^6.1.2",
+    "pg": "^8.16.3",
+    "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "@types/pg": "^8.15.6",
+    "@types/ws": "^8.18.1",
+    "tsx": "^4.20.6",
+    "vitest": "^4.1.4"
+  }
+}
